@@ -1,0 +1,13 @@
+# Service = HOW people reach the app.
+# One address for all the copies. Type LoadBalancer = Azure gives it a public IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: hello-app        # send traffic to pods with this label
+  ports:
+  - port: 80              # the port people use (http://<EXTERNAL-IP>)
+    targetPort: 5000      # the port the app listens on inside the pod

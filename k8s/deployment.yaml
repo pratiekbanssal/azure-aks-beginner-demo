@@ -1,0 +1,38 @@
+# Deployment = WHAT to run.
+# "Run 3 copies (pods) of hello-app from this image, and keep them running."
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-app
+spec:
+  replicas: 3                      # how many copies of the app to run
+  selector:
+    matchLabels:
+      app: hello-app               # which pods belong to this deployment
+  template:                        # the blueprint for each pod
+    metadata:
+      labels:
+        app: hello-app
+    spec:
+      containers:
+      - name: hello-app
+        # >>> If you're following along, change "aksdemopb.azurecr.io" to YOUR
+        # >>> registry's Login server (Portal > your registry > Overview).
+        image: aksdemopb.azurecr.io/hello-app:v1
+        ports:
+        - containerPort: 5000      # the port the Flask app listens on
+        # Kubernetes only sends traffic to a pod once this check passes.
+        # This is what makes rolling updates safe.
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        resources:                 # keep it small so it fits a tiny cluster
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
