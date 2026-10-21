@@ -88,7 +88,7 @@ Install these **before** you start, then run the check command for each.
 | **Azure CLI** (`az`) | Log in to Azure and ACR, connect to AKS | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az version` |
 | **Docker Desktop** | Build and run containers | [Get Docker](https://docs.docker.com/get-started/get-docker/) | `docker version` (shows **Client** *and* **Server**) |
 | **kubectl** | Talk to Kubernetes | `az aks install-cli` ([docs](https://learn.microsoft.com/cli/azure/aks#az-aks-install-cli)), or the copy bundled with Docker Desktop | `kubectl version --client` |
-| **Python 3.10+** | Run the app locally in Step 1 | [python.org](https://www.python.org/downloads/) | `python --version` (on macOS/Linux you may need `python3`) |
+| **Python 3.10+** | Run the app locally in Step 1 | [python.org](https://www.python.org/downloads/) (macOS: `brew install python`) | macOS/Linux: `python3 --version` · Windows: `py --version`. Must show **3.10 or newer**. On macOS, the built-in `/usr/bin/python3` is often 3.9; install a newer one. |
 | **VS Code** | Edit the files and run the terminal | [code.visualstudio.com](https://code.visualstudio.com/) | Opens fine |
 | **Git** | Clone this repo | [git-scm.com](https://git-scm.com/downloads) | `git --version` |
 
@@ -142,11 +142,31 @@ If you pick **RBAC Registry + ABAC Repository Permissions**, the classic `AcrPul
 
 ![Step 1](diagrams/previews/02-run-it-on-my-laptop.png)
 
+First create a **virtual environment** (`.venv`): a private Python just for this app. Inside it, `python` and `pip` always point to the same Python, so libraries install where the app can find them.
+
+**macOS / Linux:**
+
 ```bash
 cd app/v1
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
+
+**Windows (PowerShell):**
+
+```powershell
+cd app/v1
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python app.py
+```
+
+✅ **Checkpoint:** after `activate`, your prompt starts with **`(.venv)`**. In a new terminal, run the `activate` line again before `python app.py`.
+
+> 🍎 **On a Mac?** **AirPlay Receiver** already uses port 5000, so the app stops with `Address already in use`. Turn it off: **System Settings → General → AirDrop & Handoff → AirPlay Receiver**.
 
 Open **http://localhost:5000**.
 
@@ -491,8 +511,11 @@ docker rmi hello-app:v1 hello-app:v2 hello-app:v3 aksdemopb.azurecr.io/hello-app
 
 | You see… | Most likely cause | Fix |
 |---|---|---|
-| `python: command not found` | macOS/Linux uses `python3` | Use `python3 app.py` and `pip3 install -r requirements.txt` |
-| Page doesn't load at localhost:5000 | The app isn't running, or the port is busy | Check the terminal for errors. Close anything else on port 5000 (on macOS, *AirPlay Receiver* uses 5000: turn it off in System Settings). |
+| `python: command not found` or `pip: command not found` | macOS/Linux only has `python3`/`pip3` outside a virtual environment | Follow [Step 1](#step-1-run-the-app-on-your-laptop): create and activate `.venv`. Inside it, `python` and `pip` both work. |
+| `ModuleNotFoundError: No module named 'flask'` | Flask was installed into a different Python, or the venv isn't active | Run `source .venv/bin/activate` (Windows: `.venv\Scripts\Activate.ps1`), then `pip install -r requirements.txt` |
+| `error: externally-managed-environment` on `pip install` | Homebrew/Linux Python blocks installing into the system Python | Use the virtual environment from [Step 1](#step-1-run-the-app-on-your-laptop) |
+| `Address already in use` / port 5000 is in use | On macOS, **AirPlay Receiver** listens on port 5000 | **System Settings → General → AirDrop & Handoff** → turn off **AirPlay Receiver**. Check with `lsof -i :5000`. |
+| Page doesn't load at localhost:5000 | The app isn't running | Check the terminal for errors |
 | `Cannot connect to the Docker daemon` | Docker Desktop isn't running | Start Docker Desktop and wait until it says "running" |
 | `az acr login` fails | Docker isn't running, or you're logged in to the wrong subscription | Start Docker. Run `az account show` and switch with `az account set` |
 | `docker push`: `unauthorized` / `insufficient_scope` | Not logged in to ACR, or missing **AcrPush** | Re-run `az acr login --name aksdemopb`. Check [roles](#permissions-rbac-you-need). |
